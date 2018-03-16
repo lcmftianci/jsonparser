@@ -1,0 +1,13 @@
+CC = g++ -g -std=c++11 -fPIC -shared
+IFLAG = -I./jsoncpp-src-0.5.0/include/ -I. -I./base64/
+LFLAG = -L./jsoncpp-src-0.5.0/libs/linux-gcc-5.4.1/ 
+LFLAG += -ljson_linux-gcc-5.4.1_libmt -lpthread -lopencv_core -lopencv_highgui #-lopencv_imgcodecs
+CPP = VideoInfoJsonManager.cpp filenameio.cpp ./base64/base64.cpp
+
+
+all:
+	$(CC) $(IFLAG) $(CPP) $(LFLAG) -o libjsonparser.so
+
+clean:
+	rm -rf *.o libjsonparser.o
+

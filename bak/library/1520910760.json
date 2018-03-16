@@ -1,0 +1,20 @@
+{
+	"totalCarInfo" : 
+	[
+		{
+			"carFeature" : null,
+			"carInfo" : 
+			{
+				"cVehicleBrand" : "",
+				"cVehicleColor" : "",
+				"cVehicleSubBrand" : "",
+				"cVehicleType" : "",
+				"nVehicleBrandScore" : 0,
+				"nVehicleColorScore" : 0,
+				"nVehicleTypeScore" : 0,
+				"szColor" : "rgb",
+				"szPlate" : "asd"
+			}
+		}
+	]
+}
