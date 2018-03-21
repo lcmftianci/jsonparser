@@ -1,17 +1,18 @@
 #include "VideoInfoJsonManager.h"
-
+#include <iostream>
 #include <fstream>
 #include "json/writer.h"
 #include "json/json.h"
 #include "json/value.h"
 #include "filenameio.h"
 #include <pthread.h>
-
+#include <stdio.h>
 #include <opencv/cv.h>
 #include <opencv2/opencv.hpp>
-//#include <opencv2/highgui.hpp>
 #include <iconv.h>
 #include "base64.h"
+
+#include "timeused.h"
 
 //引入命名空间
 using namespace std;
@@ -19,147 +20,33 @@ using namespace cv;
 
 pthread_mutex_t g_mutex;
 
-static const char b64_table[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-char *base64_encode(char *bindata, size_t inlen, char **out, size_t *outlen)
+/*
+	GetJsonFilePath,遍历所有json文件路径
+*/
+int VideoInfoJsonManager::GetJsonFilePath(std::vector<std::string> &arrJsonPath)
 {
-	size_t _outlen = *outlen;
-	char *_out = NULL;
-	size_t out_pos = 0;
-	if(NULL == *out)
-	{
-		_outlen = (inlen / 3 + (inlen%3 != 0)) * 4 + 1;
-		_out = (char *)malloc(_outlen);
-	}
-	else
-	{
-		_outlen = *outlen;
-	    _out = *out;
-	}
-	memset(_out,'=',_outlen);
-	_out[_outlen-1] = 0;
-	int bits_collected = 0;
-	int accumulator = 0;
-	for(int i = 0; i < inlen; i++)
-	{
-		accumulator = (accumulator << 8) | (bindata[i] & 0xffu);
-		bits_collected += 8;
-		while (bits_collected >= 6)
-		{
-			bits_collected -= 6;
-			_out[out_pos++] = b64_table[(accumulator >> bits_collected) & 0x3fu];
-		}
-	}
-	if(bits_collected >= 6)
-	{
-		if(NULL == *out)
-		{
-			free(_out);
-		}
-		return NULL;
-	}								
-
-	if(bits_collected >0)
-	{
-		// Any trailing bits that are missing.
-		accumulator <<= 6 - bits_collected;
-		_out[out_pos++] = b64_table[accumulator & 0x3fu];
-	}								
-	*outlen = _outlen;
-	*out = _out;
-	return _out;
+//	m_strJsonFilePath
 }
 
-#if 0
-unsigned char *base64_decode(const char *code)    
-{    
-	//根据base64表，以字符找到对应的十进制数据    
-	 int table[]={0,0,0,0,0,0,0,0,0,0,0,0,  
-	              0,0,0,0,0,0,0,0,0,0,0,0,  
-	              0,0,0,0,0,0,0,0,0,0,0,0,  
-	              0,0,0,0,0,0,0,62,0,0,0,  
-	              63,52,53,54,55,56,57,58,  
-	              59,60,61,0,0,0,0,0,0,0,0,  
-	              1,2,3,4,5,6,7,8,9,10,11,12,  
-	              13,14,15,16,17,18,19,20,21,  
-	              22,23,24,25,0,0,0,0,0,0,26,  
-	              27,28,29,30,31,32,33,34,35,  
-	              36,37,38,39,40,41,42,43,44,  
-	              45,46,47,48,49,50,51};    
-      long len;    
-      long str_len;    
-      unsigned char *res;    
-      int i,j;    
-      //计算解码后的字符串长度    
-      len=strlen(code);    
-      //判断编码后的字符串后是否有=    
-      if(strstr(code,"=="))    
-          str_len=len/4*3-2;    
-      else if(strstr(code,"="))    
-          str_len=len/4*3-1;    
-	  else    
-	      str_len=len/4;    
-	  res=malloc(sizeof(unsigned char)*str_len+1);    
-	  res[str_len]='\0';    
-	  //以4个字符为一位进行解码    
-	  for(i=0,j=0;i < len-2;j+=3,i+=4)    
-	  {    
-	        res[j]=((unsigned char)table[code[i]])<<2 | (((unsigned char)table[code[i+1]])>>4); //取出第一个字符对应base64表的十进制数的前6位与第二个字符对应base64表的十进制数的后2位进行组合    
-	        res[j+1]=(((unsigned char)table[code[i+1]])<<4) | (((unsigned char)table[code[i+2]])>>2); //取出第二个字符对应base64表的十进制数的后4位与第三个字符对应bas464表的十进制数的后4位进行组合    
-	        res[j+2]=(((unsigned char)table[code[i+2]])<<6) | ((unsigned char)table[code[i+3]]); //取出第三个字符对应base64表的十进制数的后2位与第4个字符进行组合    
-	  }
-																																																					 return res;
-}
-int	base64_decode( const char * base64, unsigned char * bindata)
-{
-	int i, j;
-	unsigned char k;
-	unsigned char temp[4];
-	for ( i = 0, j = 0; base64[i] != '\0' ; i += 4 )
-	{
-	    memset( temp, 0xFF, sizeof(temp) );
-	    for ( k = 0 ; k < 64 ; k ++ )
-	    {
-	         if ( base64char[k] == base64[i] )
-	              temp[0]= k;
-	    }
-	    for ( k = 0 ; k < 64 ; k ++ )
-	    {
-	         if ( base64char[k] == base64[i+1] )
-	               temp[1]= k;
-	    }
-	    for ( k = 0 ; k < 64 ; k ++ )
-	    {
-	         if ( base64char[k] == base64[i+2] )
-	               temp[2]= k;
-	    }
-	    for ( k = 0 ; k < 64 ; k ++ )
-	    {
-	         if ( base64char[k] == base64[i+3] )
-	               temp[3]= k;
-	    }
-							
-	    bindata[j++] = ((unsigned char)(((unsigned char)(temp[0] << 2))&0xFC)) | ((unsigned char)((unsigned char)(temp[1]>>4)&0x03));
-        if ( base64[i+2] == '=' )
-            break;
-					
-        bindata[j++] = ((unsigned char)(((unsigned char)(temp[1] << 4))&0xF0)) | ((unsigned char)((unsigned char)(temp[2]>>2)&0x0F));
-	    if ( base64[i+3] == '=' )
-	        break;
-																				
-	    bindata[j++] = ((unsigned char)(((unsigned char)(temp[2] << 6))&0xF0)) | ((unsigned char)(temp[3]&0x3F));	
-	}
-    return j;
-}
 
-#endif
 
-//json数据文件管理类，写入文件和读取文件
-VideoInfoJsonManager* createJsonManager(int model)
+/*
+	函数名称：createJsonManager(int model);
+	函数作用：创建对象,json数据文件管理类，写入文件和读取文件
+	输入参数：int model, 0标示图片转base64,1表示解析base64,3表示测试工程
+*/
+VideoInfoJsonManager* createJsonDataManager(int model)
 {
 	return new VideoInfoJsonManager(model);
 }
 
+
+/*
+	函数名称：IdleReadThread();
+	函数作用：解析json线程
+	输入参数：管理类指针
+*/
 void *IdleReadThread(void *params)
 {
 	VideoInfoJsonManager* pManager = (VideoInfoJsonManager*)params;
@@ -178,6 +65,32 @@ void *IdleReadThread(void *params)
 
 int g_index = 0;
 int g_index_ = 0;
+
+/*
+	函数作用：测试解析函数稳定性，释放vector obj
+*/
+void *IdleTestParserThread(void* params)
+{
+	
+	VideoInfoJsonManager* pManager = (VideoInfoJsonManager*)params;
+	if(pManager != NULL)
+	{
+		while(1)
+		{
+			usleep(200);
+			pthread_mutex_lock(&g_mutex);
+			pManager->Release();
+			pthread_mutex_unlock(&g_mutex);
+		}
+	}
+}
+
+
+/*
+	函数名称：IdelWriteThread()
+	函数作用：转换json线程
+	输入参数：管理类对象
+*/
 void *IdleWriteThread(void *params)
 {
 	cout << "thread start" << endl;
@@ -190,6 +103,7 @@ void *IdleWriteThread(void *params)
 			//if(m_arrObjRecoTask.size() > 0)
 			if( pManager->GetObjRecoTaskSize() > 0)
 			{
+				cout << "vector size::" << pManager->GetObjRecoTaskSize() << endl;
 				g_index++;
 				usleep(10);
 				pthread_mutex_lock(&g_mutex);
@@ -212,7 +126,13 @@ void *IdleWriteThread(void *params)
 	}
 }
 
-//设置存储json文件的文件夹路径
+
+
+/*
+	函数名称：SetJsonFilePath
+	函数作用：设置存储json文件的文件夹路径
+	输入参数：string, strJonsFilePath-外部输入的公共路径,int channel-当前通道
+*/
 int VideoInfoJsonManager::SetJsonFilePath(std::string strJsonFilePath, int nChannel)
 {
 	m_strJsonFilePath = strJsonFilePath;
@@ -241,12 +161,22 @@ int VideoInfoJsonManager::SetJsonFilePath(std::string strJsonFilePath, int nChan
 //	}
 }
 
-//获取已经读取过后的文件夹下的json文件翻遍回看
+
+
+/*
+	函数名称:GetVideoDataAfterRead:
+	函数作用：获取已经读取过后的文件夹下的json文件翻遍回看
+	输出参数：obj对象
+*/
 size_t VideoInfoJsonManager::GetVideoDataAfterRead(std::vector<VE_ObjectRecoTask*>& arrAfterObj)
 {
 	return arrAfterObj.size();
 }
 
+/*
+	函数名称：~VideoInfoJsonManager()
+	函数作用：析构函数
+*/
 VideoInfoJsonManager::~VideoInfoJsonManager()
 {
 //	delete m_pBase64;
@@ -254,7 +184,11 @@ VideoInfoJsonManager::~VideoInfoJsonManager()
 }
 
 
-VideoInfoJsonManager::VideoInfoJsonManager(int model):m_nModel(model),m_nChannel(1),m_strJsonFilePath("")
+/*
+	函数名称：VideoInfoJsonManager()
+	函数作用：构造函数
+*/
+VideoInfoJsonManager::VideoInfoJsonManager(int model):m_nModel(model),m_nChannel(1),m_strJsonFilePath(""),m_callback(nullptr)
 {
 	pthread_mutex_init(&g_mutex, NULL);
 #if 0
@@ -278,7 +212,7 @@ VideoInfoJsonManager::VideoInfoJsonManager(int model):m_nModel(model),m_nChannel
 
 	//供需超说暂时直接根据每一路相机创建一个文件夹
 	cout << "constructor" << endl;
-	if(model == 0)
+	if(model == 0) //写入json文件
 	{
 		//根据小时创建文件夹，并获取文件夹路径，赋予成员变量
 		//createDirectory(const_cast<char*>(strJsonFilePath.c_str()));
@@ -293,23 +227,43 @@ VideoInfoJsonManager::VideoInfoJsonManager(int model):m_nModel(model),m_nChannel
 			cout << "thread write create success" << endl;
 		}
 	}
-	else
+	else if(model == 1)//解析json文件
 	{
 		//根据时间合成文件夹
 		pthread_t pid;
 		if(pthread_create(&pid, NULL, IdleReadThread, this) != 0)
 		{
-			cout << "thread create failed" << endl;
+			cout << "read thread create failed" << endl;
 		}
 		else
 		{
-			cout << "thread create success" << endl;
+			cout << "read thread create success" << endl;
 			pthread_detach(pid);
 		}
 	}
+	else if(model == 3)
+	{
+		//根据时间合成文件夹
+		pthread_t pid;
+		if(pthread_create(&pid, NULL, IdleTestParserThread, this) != 0)
+		{
+			cout << "testParser thread create failed" << endl;
+		}
+		else
+		{
+			cout << "testParser thread create success" << endl;
+			pthread_detach(pid);
+		}
+		
+	}
 }
 
-//外部调用推送json队列
+
+/*	
+	函数名称：InsertJsonData
+	函数作用：外部调用推送json队列
+	输入参数:obj对象
+*/
 int VideoInfoJsonManager::InsertJsonData(VE_ObjectRecoTask *pInfo)
 {
 	pthread_mutex_lock(&g_mutex);
@@ -320,42 +274,12 @@ int VideoInfoJsonManager::InsertJsonData(VE_ObjectRecoTask *pInfo)
 	//SaveJsonFile();
 }
 
-#if 0
-//保存和解析bin文件
-void VideoInfoJsonManager::SaveJsonBin()
-{
-		while(1)
-		{
-			usleep(10);
-			if(m_arrObjectInfo.size() > 0)
-			{
-				std::cout << "start write json data to file" << std::endl;
-				char jsonName[100];
-				VE_Object obj = m_arrObjectInfo.front();
-				//根据时间戳穿件文件
-				sprintf(jsonName, "%lld.json", obj.m_uiTimeStamp);
-				ofstream ofs(jsonName, ios::out|ios::binary);
-                if(ofs)
-				{
-					cerr << "open json failed" << endl;
-					return;
-				}
-				//开始写入json数据
-				Json::Value root = Json::Value();
-
-
-			//这里需要根据传过来的信息判断是那一路相机需要放到那个文件夹下
-		}
-}
-
-void VideoInfoJsonManeger::ParseJsonBin(std::string strJsonPath)
-{
-	
-}
-
-#endif
 
 #if 1
+/*
+	函数名称：gb2312toutf8
+	函数作用：字符转码
+*/
 int gb2312toutf8(const char *sourcebuf, size_t sourcelen, char *destbuf, size_t destlen)
 {
 	iconv_t cd;
@@ -370,6 +294,11 @@ int gb2312toutf8(const char *sourcebuf, size_t sourcelen, char *destbuf, size_t 
 	return 0;
 }
 
+
+/*
+	函数名称：GetSaveJsonPath
+	函数作用：合成json文件名称
+*/
 string GetSaveJsonPath(string strRoot,VE_ObjectRecoTask* objReco)
 {
 	if(strRoot == "")
@@ -389,16 +318,23 @@ string GetSaveJsonPath(string strRoot,VE_ObjectRecoTask* objReco)
 	createDirectory(l_strPath.c_str());	//创建文件夹目录
 	
 	//get Save Path
-	sprintf(jsonName, "/%s_%d_%lld_%d.json", objReco->m_vVideoChannelInfo.cChannelDescript, objReco->m_vVideoChannelInfo.nChannelIndex,  objReco->m_vObjInfo.m_uiTimeStamp, g_index);	
+	sprintf(jsonName, "/%s_%d_%lld_%d", objReco->m_vVideoChannelInfo.cChannelDescript, objReco->m_vVideoChannelInfo.nChannelIndex,  objReco->m_vObjInfo.m_uiTimeStamp, g_index);	
 	l_strPath += jsonName;
+	g_index++;
 	printf("JSON Name is %s \n",l_strPath.c_str());
 	
 	return l_strPath;
 }
 
-//保存json文件到文件
+
+/*
+	函数名称：SaveJsonFile
+	函数作用：保存json文件到文件
+	输入参数: 无
+*/
 int VideoInfoJsonManager::SaveJsonFile()
-{	
+{
+	timeused tim;	
 	{
 		cout << "In SaveJsonFile" << endl;	
 		if(m_strJsonFilePath == "")
@@ -417,7 +353,11 @@ int VideoInfoJsonManager::SaveJsonFile()
 		string l_strPath = GetSaveJsonPath(m_strJsonFilePath, objReco);
 		
 		//这里需要根据传过来的信息判断是那一路相机需要放到那个文件夹下
-		ofs.open(l_strPath.c_str());//根据当前时间给json文件命名
+		string l_strPathJson = l_strPath;
+		string l_strPathJpg = l_strPath;
+		l_strPathJson += ".json";
+		l_strPathJpg += ".jpg";
+		ofs.open(l_strPathJson.c_str());//根据当前时间给json文件命名
 	
 		//申请存储图片的空间
 		string strBase64Out;
@@ -428,15 +368,15 @@ int VideoInfoJsonManager::SaveJsonFile()
 		   objReco->m_vObjInfo.m_uiObjTypeEx == ve_obj_typeex_car ||
 		   objReco->m_vObjInfo.m_uiObjTypeEx == ve_obj_typeex_truck)
 		{
-			cout << "carInfo" << endl;
+			cout << "carInfo=============================================================================" << endl;
 			Json::Value carFeature;
 			Json::Value carInfo;
 			Json::Value car;
 			
-		//	gb2312toutf8(objReco->m_vObjInfo.m_vVehicleInfo.plateinfo.szPlate, strlen(objReco->m_vObjInfo.m_vVehicleInfo.plateinfo.szPlate), lResDst, 256);
-		//	printf("%s \n %s \n",objReco->m_vObjInfo.m_vVehicleInfo.plateinfo.szPlate,lResDst);
-		//	std::string plate = lResDst;
+			//gb2312toutf8(objReco->m_vObjInfo.m_vVehicleInfo.plateinfo.szPlate, strlen(objReco->m_vObjInfo.m_vVehicleInfo.plateinfo.szPlate), lResDst, 256);
+			printf("%s \n %s \n",objReco->m_vObjInfo.m_vVehicleInfo.plateinfo.szPlate,lResDst);
 			carInfo["szPlate"] = objReco->m_vObjInfo.m_vVehicleInfo.plateinfo.szPlate;						//车牌号码
+			//gb2312toutf8(objReco->m_vObjInfo.m_vVehicleInfo.plateinfo.szColor, strlen(objReco->m_vObjInfo.m_vVehicleInfo.plateinfo.szColor), lResDst, 256);
 			carInfo["szColor"] = objReco->m_vObjInfo.m_vVehicleInfo.plateinfo.szColor;						//车牌颜色
 			carInfo["cVehicleColor"] = objReco->m_vObjInfo.m_vVehicleInfo.cVehicleColor;					//车辆颜色
 			carInfo["nVehicleColorScore"] = objReco->m_vObjInfo.m_vVehicleInfo.nVehicleColorScore;			//车辆颜色得分
@@ -447,47 +387,63 @@ int VideoInfoJsonManager::SaveJsonFile()
 			carInfo["cVehicleSubBrand"] = objReco->m_vObjInfo.m_vVehicleInfo.cVehicleSubBrand;			    //车辆子品牌
 			//carInfo["cVehicleColor"] = obj.m_vVehicleInfo.cVehicleColor;			//车辆颜色
 			//carInfo["cVehicleColor"] = obj.m_vVehicleInfo.cVehicleColor;			//车辆颜色
-			//carInfo["cVehicleColor"] = obj.m_vVehicleInfo.cVehicleColor;			//车辆颜色
+			//carInfo["cVehicleColor"] = obj.m_vVehicleInfo.cVehicleColor;			//车辆颜色	
+			carFeature["fVehicleCarFeature"] = objReco->m_vObjInfo.m_vVehicleInfo.fVehicleCarFeature;
 
+			if(objReco->m_pObjImageEx != nullptr)
+				cvSaveImage(l_strPathJpg.c_str(), objReco->m_pObjImageEx);
+			
+#if 0	//暂时不用json问价存储图片
 			carInfo["ImageExWidth"] = objReco->m_pObjImageEx->width;			//图片宽度
 			carInfo["ImageExHeight"] = objReco->m_pObjImageEx->height;			//图片高度
 			carInfo["ImageExChannel"] = objReco->m_pObjImageEx->nChannels;			//图片通道
-	
-			carFeature["fVehicleCarFeature"] = objReco->m_vObjInfo.m_vVehicleInfo.fVehicleCarFeature;
-			//将IplImage读取为base64格式	
-			CBase64::Encode((const unsigned char*)objReco->m_pObjImageEx->imageData, objReco->m_pObjImageEx->imageSize, strBase64Out);
+			//将IplImage读取为base64格式
+			if(objReco->m_pObjImageEx != nullptr)
+			{	
+				CBase64::Encode((const unsigned char*)objReco->m_pObjImageEx->imageData, objReco->m_pObjImageEx->imageSize, strBase64Out);
+			}
+			cout << objReco->m_pObjImageEx->width << "---" << objReco->m_pObjImageEx->height << "---" << objReco->m_pObjImageEx->nChannels << endl;;
 			cout << "convert base64 end" << endl;
-			//CBase64::Encode(pBuf, objReco->m_pObjImageEx->imageSize, strBase64Out);
 			carInfo["m_pObjImageEx"] = strBase64Out.c_str();
-			//carInfo["m_pObjImageEx"] = base64_encode(objReco->m_pObjImageEx->imageData, objReco->m_pObjImageEx->nSize, &out, &outlen);
-			cout << "base 64 endl" << endl;
+#endif
 			car["carInfo"] = carInfo;
 			car["carFeature"] = carFeature;
-			root["totcalCarInfo"] = car;
+			root["totalCarInfo"] = car;
 		}
 		else if(objReco->m_vObjInfo.m_uiObjTypeEx == ve_obj_typeex_bicycle ||
 				objReco->m_vObjInfo.m_uiObjTypeEx == ve_obj_typeex_motorbike ||
 					objReco->m_vObjInfo.m_uiObjTypeEx == ve_obj_typeex_tricar)
 		{
-			cout << "otherInfo" << endl;
+			cout << "otherInfo**************************************************************************" << endl;
 			Json::Value NatureInfo;
 			NatureInfo["name"] = objReco->m_vObjInfo.m_vNatureInfo.name;
 			NatureInfo["type"] = objReco->m_vObjInfo.m_vNatureInfo.type;
 			NatureInfo["pose"] = objReco->m_vObjInfo.m_vNatureInfo.pose;
 			NatureInfo["truncated"] = objReco->m_vObjInfo.m_vNatureInfo.truncated;
 			NatureInfo["score"] = objReco->m_vObjInfo.m_vNatureInfo.score;
+			if(objReco->m_pObjImageEx != nullptr)
+				cvSaveImage(l_strPathJpg.c_str(), objReco->m_pObjImageEx);
+#if 0	//暂时不用json问价存储图片
 			NatureInfo["ImageExWidth"] = objReco->m_pObjImageEx->width;			//图片宽度
 			NatureInfo["ImageExHeight"] = objReco->m_pObjImageEx->height;			//图片高度
 			NatureInfo["ImageExChannel"] = objReco->m_pObjImageEx->nChannels;			//图片通道
 			//NatureInfo["m_pObjImageEx"] = base64_encode(objReco->m_pObjImageEx->imageData, objReco->m_pObjImageEx->nSize, &out, &outlen);
-			CBase64::Encode((const unsigned char*)objReco->m_pObjImageEx->imageData, objReco->m_pObjImageEx->nSize, strBase64Out);
+			cout << objReco->m_pObjImageEx->width << "---" << objReco->m_pObjImageEx->height << "---" << objReco->m_pObjImageEx->nChannels << endl;;
+			if(objReco->m_pObjImageEx != nullptr)
+			{
+				CBase64::Encode((const unsigned char*)objReco->m_pObjImageEx->imageData, objReco->m_pObjImageEx->imageSize, strBase64Out);
+			}
 			cout << "convert base64 end" << endl;
 			NatureInfo["m_pObjImageEx"] = strBase64Out.c_str();
+#endif
 			root["otherVehicleInfo"] = NatureInfo;
 		}
 		else if(objReco->m_vObjInfo.m_uiObjTypeEx == ve_obj_typeex_person)
 		{
-			cout << "peopleInfo" << endl;	
+			//if(sizeof(objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea)/sizeof(VE_TinyFeature) < 10)
+			//	cout << "human info error" << endl;
+			
+			cout << "peopleInfoi------------------------------------------------------------------------" << endl;	
 			Json::Value personInfo;
 			personInfo["coatColor"] = objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[0].cFeature;
 			personInfo["coatColorScore"] = objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[0].nFeatureScore;
@@ -509,30 +465,67 @@ int VideoInfoJsonManager::SaveJsonFile()
 			personInfo["raceTypeScore"] = objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[8].nFeatureScore;
 			personInfo["hatType"] = objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[9].cFeature;
 			personInfo["hatTypeScore"] = objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[9].nFeatureScore;
+		
+			if(objReco->m_pObjImageEx != nullptr)
+				cvSaveImage(l_strPathJpg.c_str(), objReco->m_pObjImageEx);
+
+#if 0	//暂时不用json问价存储图片
 			personInfo["ImageExWidth"] = objReco->m_pObjImageEx->width;				//图片宽度
 			personInfo["ImageExHeight"] = objReco->m_pObjImageEx->height;				//图片高度
 			personInfo["ImageExChannel"] = objReco->m_pObjImageEx->nChannels;			//图片通道
-			CBase64::Encode((const unsigned char*)objReco->m_pObjImageEx->imageData, objReco->m_pObjImageEx->nSize, strBase64Out);
+			cout << objReco->m_pObjImageEx->width << "---" << objReco->m_pObjImageEx->height << "---" << objReco->m_pObjImageEx->nChannels << endl;;
+			if(objReco->m_pObjImageEx != nullptr)
+			{
+				CBase64::Encode((const unsigned char*)objReco->m_pObjImageEx->imageData, objReco->m_pObjImageEx->imageSize, strBase64Out);
+			}
 			cout << "convert base64 end" << endl;
 			personInfo["m_pObjImageEx"] = strBase64Out.c_str();
-			root["PersonInifo"]		= personInfo;
+#endif		
+			root["PersonInfo"]		= personInfo;
 		}
-
 		std::string strJson = root.toStyledString();
+		//使用回调函数将数据外传
+		if(objReco->m_pObjImageEx != nullptr && m_callback != nullptr)
+			m_callback(strJson, cvCloneImage(objReco->m_pObjImageEx));
 		ofs.write(strJson.c_str(), strlen(strJson.c_str()));
 		ofs.close();
 		//清空队列里的某个信息
-		cvReleaseImage(&(objReco->m_pObjImage));
-		cvReleaseImage(&(objReco->m_pObjImageEx));
+		if(objReco->m_pObjImage != nullptr)
+			cvReleaseImage(&(objReco->m_pObjImage));
+		if(objReco->m_pObjImageEx != nullptr)
+			cvReleaseImage(&(objReco->m_pObjImageEx));
 		delete objReco;
 		m_arrObjRecoTask.erase(m_arrObjRecoTask.begin());
-		cout << "hello--" << endl;
 	}
 }
 #endif
 
+
+/*
+	释放obj
+*/
+int VideoInfoJsonManager::Release()
+{
+	cout << "Release" << endl;
+	int i = 0;
+	while(m_arrObjRecoTask.size() > 0)
+	{
+		cvReleaseImage(&(m_arrObjRecoTask[i]->m_pObjImageEx));
+		delete m_arrObjRecoTask[i];
+		m_arrObjRecoTask.erase(m_arrObjRecoTask.begin());
+		i++;	
+	}
+}
+
+
+/*
+	函数名称：
+	函数作用：解析json文件
+*/
 void VideoInfoJsonManager::ParseJson()
 {
+
+#if 0
 	std::string strJsonPath = "";
 	std::string strJsonPathAfter = "";
 
@@ -544,7 +537,7 @@ void VideoInfoJsonManager::ParseJson()
 		if(m_arrObjRecoTask.size() == 0)
 		{
 			arrJsonFile.clear();
-			scanDir(m_arrJsonPath[i].c_str(), arrJsonFile, 0);
+			scanDir(m_arrJsonPath[i].c_str(), arrJsonFile, 0, false);
 			for(int j = 0; j < arrJsonFile.size(); ++j)
 			{
 				strJsonPath = m_arrJsonPath[i];
@@ -557,13 +550,23 @@ void VideoInfoJsonManager::ParseJson()
 			}
 		}
 	}
+#endif 
 }
 
 
+int nTestParse = 0;
+
 #if 1
-//解析出需要的数据并将数据显示到指定串口
+
+/*
+	函数名称：ParsrJsonFile
+	函数作用：解析出需要的数据并将数据显示到指定串口
+	输入参数:json文件路径
+*/	
 int VideoInfoJsonManager::ParseJsonFile(std::string strJsonPath)
 {
+	pthread_mutex_lock(&g_mutex);
+	cout << "Parse Json" << endl;
 	if(strJsonPath == "")
 		return -1;
 	ifstream ifs;
@@ -587,9 +590,9 @@ int VideoInfoJsonManager::ParseJsonFile(std::string strJsonPath)
 	//if(reader.parse(strJson, value))
 	if(reader.parse(ifs, value))
 	{
+		cout << "CarInfo" << endl;
 		VE_ObjectRecoTask* objReco = new VE_ObjectRecoTask;
 		string strIn;
-		unsigned char* pOut;
 		unsigned long uOutLen;
 		if(value.isMember("totalCarInfo"))
 		{
@@ -605,30 +608,65 @@ int VideoInfoJsonManager::ParseJsonFile(std::string strJsonPath)
 			//	const Json::Value carFeature = arrObj[i]["carFeature"];
 				//std::string szPlate = carInfo["szPlate"].asString();
 				//cout << "szPlate:" << szPlate.c_str() << endl;
+				cout << "totalCarInfo" << endl;
 				const Json::Value carInfo = arrObj["carInfo"];
+				cout << "carInfo" << endl;
 				const Json::Value carFeature = arrObj["carFeature"];
+				cout << "carFeature" << endl;
 				strcpy(objReco->m_vObjInfo.m_vVehicleInfo.plateinfo.szPlate, carInfo["szPlate"].asString().c_str());						//车牌号码
+				cout << "szPlate" << endl;
 				strcpy(objReco->m_vObjInfo.m_vVehicleInfo.plateinfo.szColor, carInfo["szColor"].asString().c_str());						//车牌颜色
-				strcpy(objReco->m_vObjInfo.m_vVehicleInfo.cVehicleColor, carInfo["cVehicleColorScore"].asString().c_str());					//车辆颜色
+				cout << "szColor" << endl;
+				strcpy(objReco->m_vObjInfo.m_vVehicleInfo.cVehicleColor, carInfo["cVehicleColor"].asString().c_str());					//车辆颜色
+				cout << "cVehicleColor" << endl;
 				objReco->m_vObjInfo.m_vVehicleInfo.nVehicleColorScore = (veu8)carInfo["nVehicleColorScore"].asInt();			//车辆颜色得分
+				cout << "nVehicleColorScore" << endl;
 				objReco->m_vObjInfo.m_vVehicleInfo.nVehicleTypeScore = (veu8)carInfo["nVehicleTypeScore"].asInt();			//车辆品牌得分
+				cout << "nVehicleTypeScore" << endl;
 				strcpy(objReco->m_vObjInfo.m_vVehicleInfo.cVehicleType, carInfo["cVehicleType"].asString().c_str());					    //车型
+				cout << "nVehicleType" << endl;
 				strcpy(objReco->m_vObjInfo.m_vVehicleInfo.cVehicleBrand, carInfo["cVehicleBrand"].asString().c_str());					//车辆品牌
+				cout << "cVehicleBrand" << endl;
 				objReco->m_vObjInfo.m_vVehicleInfo.nVehicleBrandScore = (veu8)carInfo["nVehicleBrandScore"].asInt();			//车辆品牌得分
+				cout << "nVehicleBrandScore" << endl;
 				strcpy(objReco->m_vObjInfo.m_vVehicleInfo.cVehicleSubBrand, carInfo["cVehicleSubBrand"].asString().c_str());			    //车辆子品牌
-				strcpy(objReco->m_vObjInfo.m_vVehicleInfo.fVehicleCarFeature, carFeature["fVehicleCarFeature"].asString().c_str());			//carFeature
+				cout << "nVehicleSubBrand" << endl;
+				memcpy(objReco->m_vObjInfo.m_vVehicleInfo.fVehicleCarFeature, carFeature["fVehicleCarFeature"].asString().c_str(), carFeature["fVehicleCarFeature"].asString().length());			//carFeature
+				cout << "fVehicleCarFeature" << endl;
 				
+			
 				//获取图片宽高
-				IplImage *pImg = cvCreateImage(cvSize(carInfo["ImageExWidth"].asInt(), carInfo["ImageExHeight"].asInt()), 8, carInfo["ImageExChannel"].asInt()); 
+				int nWidth = carInfo["ImageExWidth"].asInt();
+				int nHeight = carInfo["ImageExHeight"].asInt();
+				int nChannel = carInfo["ImageExChannel"].asInt();
+				objReco->m_pObjImageEx = cvCreateImage(cvSize(carInfo["ImageExWidth"].asInt(), carInfo["ImageExHeight"].asInt()), 8, carInfo["ImageExChannel"].asInt()); 
+				cout << "ImageEx"  << carInfo["ImageExWidth"].asInt() << "---" << carInfo["ImageExHeight"].asInt() << "--" << carInfo["ImageExChannel"].asInt() << endl;
 				strIn = carInfo["m_pObjImageEx"].asString();
-				CBase64::Decode(strIn, pOut, &uOutLen);						//解码base64
+				unsigned char* pOut = (unsigned char*)malloc(strIn.length());
+			//	cout << strIn.c_str() << endl;
+				//CBase64::Decode(strIn, pOut, &uOutLen);
+				memcpy(pOut, strIn.c_str(), strIn.length());
+				cout << strIn.length() << endl;
+				cout << "-----"<< endl;
+				cout << nWidth* nHeight *nChannel  << endl;
+				CBase64::base64Decode((char*)pOut, strIn.length());
+				//解码base64
+				cout << "m_pObjImageEx" << endl;
+				//cout << uOutLen << endl;
+			 	//cout << pOut << endl;	
 				//合成图片
-				memcpy(pImg->imageData, pOut, uOutLen);
-				objReco->m_pObjImageEx = pImg;
+				memcpy(objReco->m_pObjImageEx->imageData, pOut, nWidth*nHeight*nChannel);
+				cout << "total endl" << endl;
+				char strJpgPath[100];
+				sprintf(strJpgPath, "%d.jpg", nTestParse);
+				nTestParse++;
+				cvSaveImage(strJpgPath, objReco->m_pObjImageEx);
+				free(pOut);
 			}
 		}
 		else if(value.isMember("otherVehicleInfo"))
 		{
+				cout << "OtherInfo" << endl;
 				const Json::Value NatureInfo = value["otherVehicleInfo"];
 				strcpy(objReco->m_vObjInfo.m_vNatureInfo.name, NatureInfo["name"].asString().c_str());
 				//strcpy(obj.m_vNatureInfo.type, NatureInfo["type"].asString().c_str());
@@ -639,17 +677,23 @@ int VideoInfoJsonManager::ParseJsonFile(std::string strJsonPath)
 				objReco->m_vObjInfo.m_vNatureInfo.truncated = (veu8)NatureInfo["truncated"].asInt();
 				objReco->m_vObjInfo.m_vNatureInfo.score = (veu8)NatureInfo["score"].asInt();
 				
+				int nWidth = NatureInfo["ImageExWidth"].asInt();
+				int nHeight = NatureInfo["ImageExHeight"].asInt();
+				int nChannel = NatureInfo["ImageExChannel"].asInt();
 				//获取图片宽高
 				IplImage *pImg = cvCreateImage(cvSize(NatureInfo["ImageExWidth"].asInt(), NatureInfo["ImageExHeight"].asInt()), 8, NatureInfo["ImageExChannel"].asInt()); 
 				strIn = NatureInfo["m_pObjImageEx"].asString();
-				CBase64::Decode(strIn, pOut, &uOutLen);						//解码base64
+				unsigned char* pOut = (unsigned char*)malloc(strIn.length());
+				CBase64::base64Decode((char*)pOut, strIn.length());
 				//合成图片
-				memcpy(pImg->imageData, pOut, uOutLen);
+				memcpy(pImg->imageData, pOut, nWidth*nChannel*nHeight);
 				objReco->m_pObjImageEx = pImg;
+				cvSaveImage("1.jpg" ,pImg);
+				free(pOut);
 		}
 		else if(value.isMember("PersonInfo"))
 		{	
-				cout << "read peopleInfo" << endl;
+				cout << "PeopleInfo" << endl;
 				const Json::Value personInfo = value["PersonInfo"];
 				strcpy(objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[0].cFeature, personInfo["coatColor"].asString().c_str());
 				objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[0].nFeatureScore = (veu8)personInfo["coatColorScore"].asInt();
@@ -671,35 +715,36 @@ int VideoInfoJsonManager::ParseJsonFile(std::string strJsonPath)
 				objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[8].nFeatureScore = (veu8)personInfo["raceTypeScore"].asInt();
 				strcpy(objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[9].cFeature, personInfo["hatType"].asString().c_str());
 				objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[9].nFeatureScore = (veu8)personInfo["hatTypeScore"].asInt();
+				int nWidth = personInfo["ImageExWidth"].asInt();
+				int nHeight = personInfo["ImageExHeight"].asInt();
+				int nChannel = personInfo["ImageExChannel"].asInt();
 				//获取图片宽高
 				IplImage *pImg = cvCreateImage(cvSize(personInfo["ImageExWidth"].asInt(), personInfo["ImageExHeight"].asInt()), 8, personInfo["ImageExChannel"].asInt()); 
 				strIn = personInfo["m_pObjImageEx"].asString();
-				CBase64::Decode(strIn, pOut, &uOutLen);						//解码base64
+				unsigned char* pOut = (unsigned char*)malloc(strIn.length());
+				CBase64::base64Decode((char*)pOut, strIn.length());
 				//合成图片
-				memcpy(pImg->imageData, pOut, uOutLen);
+				memcpy(pImg->imageData, pOut, nWidth*nChannel*nHeight);
 				objReco->m_pObjImageEx = pImg;
+				cvSaveImage("1.jpg" ,pImg);
+				free(pOut);
 		}
 		m_arrObjRecoTask.push_back(objReco);
 	}
 	
-
-#if 0
-	for(auto i = 0; i < jsonRoot.size(); ++i)
-	{
-		cout << jsonRoot.size() << endl;
-		for(auto sub = jsonRoot[i].begin(); sub != jsonRoot[i].end(); sub++)
-		{
-			cout << sub.name() << endl;//<< ":" << jsonRoot[i][sub.name()] << endl;
-			//cout << sub.name() << ":" << (*sub) << endl;
-		}
-	}
-#endif
+	pthread_mutex_unlock(&g_mutex);
 }
 
 #endif
 
 
-//获取物体信息
+
+
+/*	
+	函数名称：
+	函数作用：获取物体信息
+	输出参数：获取obj
+*/
 int VideoInfoJsonManager::GetVideoData(VE_ObjectRecoTask* vInfo)
 {
 	pthread_mutex_lock(&g_mutex);

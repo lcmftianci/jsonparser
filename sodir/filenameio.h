@@ -18,7 +18,13 @@
 
 using namespace std;
 
-//获取文件的最后修改时间
+/*
+	函数名称：GetFileLastModifyTime(char *strPath, int *size, long *modify_time)
+	函数作用：获取文件的最后修改时间
+	输入参数：char * strPath 需要的文件
+	输出参数：文件大小
+	输出参数：最后修改的时间
+*/
 void GetFileLastModifyTime(char *strPath,int *size,long *modify_time);
 
 
@@ -44,15 +50,30 @@ int GetCurrentHour(char* strCurrnet);
 //遍历文件夹
 void ReverseDirctory(const char* strPath, std::vector<std::string> & arrJsonFilePath);
 
+/*
+	函数名称：scanDir
+	函数作用：遍历文件夹内容
+	输入参数：const char* dir ,输入文件夹
+	输出参数：vector<string>& 输出内容
+	输入参数：int depth 遍历深度
+	输入参数：bool bDirOrFile 输出是文件还是文件夹，true表示只遍历文件夹，false表示只遍历文件
+	返回值：无
+*/
+void scanDir(const char *dir, std::vector<std::string>& arrJsonPath, int depth, bool bDirOrFile);
 
-void scanDir(const char *dir, std::vector<std::string>& arrJsonPath, int depth);
-
-
-//整数转string
+/*
+	函数名称:IntToStr(int num)
+	函数作用：整形转字符串
+	输入参数：int num 需要处理的数字
+	返回值：输出的字符串
+*/
 std::string IntToStr(int num);
 
-
-//获取当前执行程序路径
+/*
+	行数名称：
+	函数作用：获取当前执行程序路径
+	输出参数：
+*/
 size_t GetCurrentExePath( char* processdir,char* processname, size_t len);
 
 

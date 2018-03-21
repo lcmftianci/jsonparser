@@ -1,4 +1,9 @@
 ﻿#include"base64.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
 static const char*g_pCodes="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 static const unsigned char g_pMap[256]={255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
 255,255,255,255,255,255,255,62,255,255,255,63,
@@ -94,4 +99,85 @@ bool CBase64::Decode(const string& strIn, unsigned char * pOut, unsigned long *u
 return true;
 }
 
+ 
+int CBase64::base64Decode(char * in,int inlen)
+{
+    unsigned char * out = (unsigned char *)malloc(inlen);
+    unsigned long t, x, y, z;
+    unsigned char c;
+    int g = 3;
+ 
+    for (x = y = z = t = 0; x<inlen;)
+        {
+            c = g_pMap[in[x++]];
+            if (c == 255) return -1;
+            if (c == 253) continue;
+            if (c == 254)
+                {
+                    c = 0;
+                    g--;
+                }
+            t = (t<<6)|c;
+            if (++y == 4)
+                {
+                    out[z++] = (unsigned char)((t>>16)&255);
+                    if (g > 1) out[z++] = (unsigned char)((t>>8)&255);
+                    if (g > 2) out[z++] = (unsigned char)(t&255);
+                    y = t = 0;
+                }
+        }
+    memcpy(in,out,z);
+    free(out);
+    return z;
+}
 
+
+bool CBase64::base64Encode(char *bindata, size_t inlen, char **out, size_t *outlen)
+{
+	size_t _outlen = *outlen;
+	char *_out = NULL;
+	size_t out_pos = 0;
+	if(NULL == *out)
+	{
+		_outlen = (inlen / 3 + (inlen%3 != 0)) * 4 + 1;
+		_out = (char *)malloc(_outlen);
+	}
+	else
+	{
+		_outlen = *outlen;
+	    _out = *out;
+	}
+	memset(_out,'=',_outlen);
+	_out[_outlen-1] = 0;
+	int bits_collected = 0;
+	int accumulator = 0;
+	for(int i = 0; i < inlen; i++)
+	{
+		accumulator = (accumulator << 8) | (bindata[i] & 0xffu);
+		bits_collected += 8;
+		while (bits_collected >= 6)
+		{
+			bits_collected -= 6;
+			_out[out_pos++] = g_pCodes[(accumulator >> bits_collected) & 0x3fu];
+		}
+	}
+	if(bits_collected >= 6)
+	{
+		if(NULL == *out)
+		{
+			free(_out);
+		}
+		return NULL;
+	}								
+
+	if(bits_collected >0)
+	{
+		// Any trailing bits that are missing.
+		accumulator <<= 6 - bits_collected;
+		_out[out_pos++] = g_pCodes[accumulator & 0x3fu];
+	}								
+	*outlen = _outlen;
+	*out = _out;
+//	return _out;
+	return true;
+}

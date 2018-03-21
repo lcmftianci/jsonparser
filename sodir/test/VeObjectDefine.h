@@ -365,6 +365,7 @@ typedef struct _VE_ObjectRecoTask_
 	IplImage			*m_pObjImage;				//目标图像
 	IplImage			*m_pObjImageEx;				//目标图像扩大版
 }VE_ObjectRecoTask;
+
 //车辆方向
 typedef enum _VE_VehicleDirect_
 {

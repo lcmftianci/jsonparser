@@ -3,85 +3,98 @@
 
 
 /*
-VideoJsonInfoManager 类设计
+	VideoJsonInfoManager 类设计
 
-一个写入程序，一个读取程序
+	输入总文件夹，根据视屏描述和channel新建每一路的文件夹:ip_channel
+	
+	根据视频描述和channel还有时间戳构建json文件路径：ip_channel_timestamp.json			
 
-一路视频一个文件夹，
+	一个写入程序，一个读取程序,一路视频一个文件夹，每个文件夹里面有很多按时间创建的文件夹(一个小时一个文件夹)
 
-每个文件夹里面有很多按时间创建的文件夹(一个小时一个文件夹)
+	时间文件家里的每个文件都是一个对象，每个对象都可以用前端程序读取并显示
 
-时间文件家里的每个文件都是一个对象，每个对象都可以用前端程序读取并显示
+	只要程序启动就会创建新的文件夹
 
-只要程序启动就会创建新的文件夹
+	判断文件夹是否存在，如果存在不再创建直接读取里面的json数据
 
-判断文件夹是否存在，如果存在不再创建直接读取里面的json数据
-
-如何让另一个程序读取这个刚刚存储的文件呢，获取文件创建的时间
+	如何让另一个程序读取这个刚刚存储的文件呢，获取文件创建的时间
 */
 
 #include <iostream>
 #include <queue>
 #include <vector>
 #include "VeObjectDefine.h"
+#include "JsonManager.h"
 
 
-//class CBase64;
 
-#if 0
-typedef struct  
-{
-	std::vector<VE_VehicleInfo>			m_arrVehicleInfo;			// 车辆属性
-	std::vector<VE_HumanInfo>			m_arrHumanInfo;				// 行人属性
-	std::vector<VE_NatureInfo>			m_arrNatureInfo;			// 自然物体属性
-	//IplImage *m_pObjSubImage[VE_MAX_OBJSUBIMAGE_LEN];//目标子图缓存
-}VideoInfo;
-#endif
-
-
-class VideoInfoJsonManager
+class VideoInfoJsonManager : public JsonManager
 {
 public:
 	/*
-	 *if model == 0 saver
-	 *else model  parser
-	 * */
+	 	构造函数：
+		输入参数：int model: 0 表示保存文件，1表示解析文件
+	 */
 	VideoInfoJsonManager(int model = 0);
 
 	/*
-	 *析构函数
-	 * */
+	 	析构函数
+	 */
 	virtual ~VideoInfoJsonManager();
 
-public:		
-	/*获取数据*/
+public:	
+	/*
+		获取json字符串和IplImage数据
+	*/
+	void SetResourceCallback(RESOURCE_CALLBACK callback){ m_callback = callback; }
+	
+	/*
+		获取数据
+	*/
 	int InsertJsonData(VE_ObjectRecoTask *Info);
 
-	//设置存储json文件的文件夹路径
+	/*
+		设置存储json文件的文件夹路径
+	*/
 	int SetJsonFilePath(std::string strJsonFilePath, int nChannel = 0);
 
-public:
-	/*保存数据*/
+	/*
+		保存数据
+	*/
 	int SaveJsonFile();
 	
-	/*解析数据并且开放用于显示*/
+	/*
+		解析数据并且开放用于显示
+	*/
 	int ParseJsonFile(std::string strJsonPath);
 
-	/*获取当前目录下的所有json文件
-	 *存入成员变量vetor里面，然后逐个解析，解析一个就将json文件移动到另一个文件夹里
-	 *如果遍历完了之后，就将vector清空重新遍历文件夹
-	 *如果过完一个小时
-	 * */
+
+	/*
+		析构obj,test
+	*/
+	int Release();
+
+	/*
+		获取当前目录下的所有json文件
+	 	存入成员变量vetor里面，然后逐个解析，解析一个就将json文件移动到另一个文件夹里
+	 	如果遍历完了之后，就将vector清空重新遍历文件夹
+	 	如果过完一个小时
+	 */
 	void ParseJson();
-    int GetObjRecoTaskSize(){ return m_arrObjRecoTask.size();}
-	//保存和解析bin文件
-//	void SaveJsonBin();
-
-//	void ParseJsonBin(std::string strJsonPath);
-
+    	
+	/*
+		函数名称：GetObjRecoTaskSize()
+		返回值：返回当前存储对象的大小
+	*/
+	int GetObjRecoTaskSize(){ return m_arrObjRecoTask.size();}
+	
 public:
 	//此函数用于将数据推送给Qt前端程序显示
 	int GetVideoData(VE_ObjectRecoTask *Info);
+
+
+	//获取所有json文件的路径
+	int GetJsonFilePath(std::vector<std::string> &arrJsonPath);
 
 
 	//获取已经读取过后的文件夹下的json文件翻遍回看
@@ -106,13 +119,14 @@ private:
 	 * */
 	std::string strExePath;						//合成jsonpath用                            
 	std::string m_strJsonFilePath;				//当前search path,根据时间获取的文件路径
-	std::string m_strJsonFilePathAfterRead;       //open after path
-
+	std::string m_strJsonFilePathAfterRead;      		//open after path
+	RESOURCE_CALLBACK m_callback;				//获取数据的回调函数
+	
 //	CBase64	    *m_pBase64;						//base64编解器
 };
 
 
-VideoInfoJsonManager* createJsonManager(int model = 0);
+VideoInfoJsonManager* createJsonDataManager(int model = 0);
 
 
 #endif //_VIDEO_INFO_JSON_MANAGER_H__

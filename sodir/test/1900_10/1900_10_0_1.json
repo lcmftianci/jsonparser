@@ -1,0 +1,18 @@
+{
+   "totalCarInfo" : {
+      "carFeature" : {
+         "fVehicleCarFeature" : ""
+      },
+      "carInfo" : {
+         "cVehicleBrand" : "",
+         "cVehicleColor" : "",
+         "cVehicleSubBrand" : "",
+         "cVehicleType" : "",
+         "nVehicleBrandScore" : 0,
+         "nVehicleColorScore" : 0,
+         "nVehicleTypeScore" : 0,
+         "szColor" : "nÄãºÃ",
+         "szPlate" : "fÄãºÃ"
+      }
+   }
+}

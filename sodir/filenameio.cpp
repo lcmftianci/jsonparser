@@ -226,7 +226,7 @@ void ReverseDirctory(const char* strPath, std::vector<std::string> & arrJsonFile
 #endif
 }
 
-void scanDir(const char *dir,std::vector<std::string>& arrJsonPath, int depth)
+void scanDir(const char *dir,std::vector<std::string>& arrJsonPath, int depth, bool bDirOrFile)
 {
 	DIR *dp;                      // 定义子目录流指针  
 	struct dirent *entry;         // 定义dirent结构指针保存后续目录  
@@ -245,12 +245,15 @@ void scanDir(const char *dir,std::vector<std::string>& arrJsonPath, int depth)
 	          if (strcmp(".", entry->d_name) == 0 || strcmp("..", entry->d_name) == 0)  
 	              continue;  
 	          printf("%*s%s/\n", depth, "", entry->d_name);  // 输出目录名称  
-	     //     scanDir(entry->d_name, depth+4);              // 递归调用自身，扫描下一级目录，但是我们只遍历当前目录下的所有json文件 
+	     //     scanDir(entry->d_name, depth+4);              // 递归调用自身，扫描下一级目录，但是我们只遍历当前目录下的所有json文件
+		if(bDirOrFile)
+		  	arrJsonPath.push_back(entry->d_name); 
 	     }  
 	     else  
 		 {
 			 //printf("%*s%s\n", depth, "", entry->d_name);  // 输出属性不是目录的成员 
-			 arrJsonPath.push_back(entry->d_name);
+			if(!bDirOrFile)
+			 	arrJsonPath.push_back(entry->d_name);
 		 }
 	}  
 	chdir("..");                                                  // 回到上级目录  
