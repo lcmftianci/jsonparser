@@ -14,7 +14,6 @@ JsonManager::~JsonManager()
 
 }
 
-
 JsonManager::JsonManager()
 {
 	

@@ -63,6 +63,12 @@ public:
 		保存数据
 	*/
 	int SaveJsonFile();
+
+
+	/*
+		解析json字符串
+	*/
+	int ParseJson(std::string strJson, VE_ObjectRecoTask *objReco);
 	
 	/*
 		解析数据并且开放用于显示

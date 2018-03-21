@@ -555,6 +555,92 @@ void VideoInfoJsonManager::ParseJson()
 
 
 int nTestParse = 0;
+/*
+	解析json字符串
+*/
+int VideoInfoJsonManager::ParseJson(std::string strJson, VE_ObjectRecoTask *objReco)
+{
+	Json::Value value;
+	Json::Reader reader;
+	if(reader.parse(strJson, value))
+	{
+		cout << "CarInfo" << endl;
+		objReco = new VE_ObjectRecoTask;
+		if(value.isMember("totalCarInfo"))
+		{
+			cout << "total car info is member" << endl;
+			const Json::Value arrObj = value["totalCarInfo"];
+			cout << "totalCarInfo" << endl;
+			const Json::Value carInfo = arrObj["carInfo"];
+			cout << "carInfo" << endl;
+			const Json::Value carFeature = arrObj["carFeature"];
+			cout << "carFeature" << endl;
+			strcpy(objReco->m_vObjInfo.m_vVehicleInfo.plateinfo.szPlate, carInfo["szPlate"].asString().c_str());						//车牌号码
+			cout << "szPlate" << endl;
+			strcpy(objReco->m_vObjInfo.m_vVehicleInfo.plateinfo.szColor, carInfo["szColor"].asString().c_str());						//车牌颜色
+			cout << "szColor" << endl;
+			strcpy(objReco->m_vObjInfo.m_vVehicleInfo.cVehicleColor, carInfo["cVehicleColor"].asString().c_str());					//车辆颜色
+			cout << "cVehicleColor" << endl;
+			objReco->m_vObjInfo.m_vVehicleInfo.nVehicleColorScore = (veu8)carInfo["nVehicleColorScore"].asInt();			//车辆颜色得分
+			cout << "nVehicleColorScore" << endl;
+			objReco->m_vObjInfo.m_vVehicleInfo.nVehicleTypeScore = (veu8)carInfo["nVehicleTypeScore"].asInt();			//车辆品牌得分
+			cout << "nVehicleTypeScore" << endl;
+			strcpy(objReco->m_vObjInfo.m_vVehicleInfo.cVehicleType, carInfo["cVehicleType"].asString().c_str());					    //车型
+			cout << "nVehicleType" << endl;
+			strcpy(objReco->m_vObjInfo.m_vVehicleInfo.cVehicleBrand, carInfo["cVehicleBrand"].asString().c_str());					//车辆品牌
+			cout << "cVehicleBrand" << endl;
+			objReco->m_vObjInfo.m_vVehicleInfo.nVehicleBrandScore = (veu8)carInfo["nVehicleBrandScore"].asInt();			//车辆品牌得分
+			cout << "nVehicleBrandScore" << endl;
+			strcpy(objReco->m_vObjInfo.m_vVehicleInfo.cVehicleSubBrand, carInfo["cVehicleSubBrand"].asString().c_str());			    //车辆子品牌
+			cout << "nVehicleSubBrand" << endl;
+			memcpy(objReco->m_vObjInfo.m_vVehicleInfo.fVehicleCarFeature, carFeature["fVehicleCarFeature"].asString().c_str(), carFeature["fVehicleCarFeature"].asString().length());			//carFeature
+			cout << "fVehicleCarFeature" << endl;			
+		}
+		else if(value.isMember("otherVehicleInfo"))
+		{
+			cout << "OtherInfo" << endl;
+			const Json::Value NatureInfo = value["otherVehicleInfo"];
+			strcpy(objReco->m_vObjInfo.m_vNatureInfo.name, NatureInfo["name"].asString().c_str());
+			//strcpy(obj.m_vNatureInfo.type, NatureInfo["type"].asString().c_str());
+			objReco->m_vObjInfo.m_vNatureInfo.type = (veu8)NatureInfo["type"].asInt();
+			//strcpy(obj.m_vNatureInfo.pose, NatureInfo["pose"].asString().c_str());
+			objReco->m_vObjInfo.m_vNatureInfo.pose = (veu8)NatureInfo["pose"].asInt();
+			//strcpy(obj.m_vNatureInfo.truncated, NatureInfo["truncated"].asString().c_str());
+			objReco->m_vObjInfo.m_vNatureInfo.truncated = (veu8)NatureInfo["truncated"].asInt();
+			objReco->m_vObjInfo.m_vNatureInfo.score = (veu8)NatureInfo["score"].asInt();
+		}
+		else if(value.isMember("PersonInfo"))
+		{	
+			cout << "PeopleInfo" << endl;
+			const Json::Value personInfo = value["PersonInfo"];
+			strcpy(objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[0].cFeature, personInfo["coatColor"].asString().c_str());
+			objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[0].nFeatureScore = (veu8)personInfo["coatColorScore"].asInt();
+			strcpy(objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[1].cFeature, personInfo["trousersColor"].asString().c_str());
+			objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[1].nFeatureScore = (veu8)personInfo["trousersColorScore"].asInt();
+			strcpy(objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[2].cFeature, personInfo["hairType"].asString().c_str());
+			objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[2].nFeatureScore = (veu8)personInfo["hairScore"].asInt();
+			strcpy(objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[3].cFeature, personInfo["coatType"].asString().c_str());
+			objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[3].nFeatureScore = (veu8)personInfo["coatTypeScore"].asInt();
+			strcpy(objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[4].cFeature, personInfo["trousersType"].asString().c_str());
+			objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[4].nFeatureScore = (veu8)personInfo["trousersTypeScore"].asInt();
+			strcpy(objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[5].cFeature, personInfo["bagType"].asString().c_str());
+			objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[5].nFeatureScore = (veu8)personInfo["bagTypeScore"].asInt();
+			strcpy(objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[6].cFeature, personInfo["ageType"].asString().c_str());
+			objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[6].nFeatureScore = (veu8)personInfo["ageTypeScore"].asInt();
+			strcpy(objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[7].cFeature, personInfo["gender"].asString().c_str());
+			objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[7].nFeatureScore = (veu8)personInfo["genderScore"].asInt();
+			strcpy(objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[8].cFeature, personInfo["raceType"].asString().c_str());
+			objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[8].nFeatureScore = (veu8)personInfo["raceTypeScore"].asInt();
+			strcpy(objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[9].cFeature, personInfo["hatType"].asString().c_str());
+			objReco->m_vObjInfo.m_vHumanInfo.tfHumanFea[9].nFeatureScore = (veu8)personInfo["hatTypeScore"].asInt();
+		}
+	}
+	else
+	{
+		return -1;
+	}
+	return 0;
+}
 
 #if 1
 

@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 		strcpy(objReco->m_vObjInfo.m_vVehicleInfo.plateinfo.szPlate, "f你好");
 		strcpy(objReco->m_vObjInfo.m_vVehicleInfo.plateinfo.szColor, "n你好");
 		cout << "load img" << endl;
-		objReco->m_pObjImageEx = cvLoadImage("id_0_12.jpg");
+		objReco->m_pObjImageEx = cvLoadImage("pic/id_0_12.jpg");
 		objReco->m_pObjImage = cvLoadImage("img.png");
 		//insert json
 		cout << "insert json" << endl;
@@ -62,7 +62,7 @@ int main(int argc, char** argv)
 			//strcpy(objReco->m_vObjInfo.m_vHumanInfo.plateinfo.szColor, "你好");
 		}
 		cout << "load img" << endl;
-		objReco1->m_pObjImageEx = cvLoadImage("id_0_18.jpg");
+		objReco1->m_pObjImageEx = cvLoadImage("pic/id_0_18.jpg");
 		objReco1->m_pObjImage = cvLoadImage("img.png");
 		//insert json
 		cout << "insert json" << endl;
@@ -77,7 +77,7 @@ int main(int argc, char** argv)
 		strcpy(objReco2->m_vObjInfo.m_vNatureInfo.name, "你好");
 		//strcpy(objReco->m_vObjInfo.m_vNatureInfo.plateinfo.szColor, "你好");
 		cout << "load img" << endl;
-		objReco2->m_pObjImageEx = cvLoadImage("id_0_11.jpg");
+		objReco2->m_pObjImageEx = cvLoadImage("pic/id_0_11.jpg");
 		objReco2->m_pObjImage = cvLoadImage("img.png");
 		//insert json
 		cout << "insert json" << endl;

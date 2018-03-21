@@ -31,6 +31,11 @@ public:
 	*/
 	virtual int SetJsonFilePath(std::string strJsonFilePath, int nChannel = 0);
 	
+	/*
+		解析json字符串
+	*/
+	virtual int ParseJson(std::string strJson, VE_ObjectRecoTask *objReco) = 0;
+	
 };
 
 inline JsonManager * createJsonManager(int nModel = 0){ return reinterpret_cast<JsonManager*>(createJsonManagerInternal(nModel));} 
