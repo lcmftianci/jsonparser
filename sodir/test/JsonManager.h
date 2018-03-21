@@ -25,6 +25,7 @@ public:
 		获取数据
 	*/
 	virtual int InsertJsonData(VE_ObjectRecoTask *Info);
+
 	/*
 		设置存储json文件的文件夹路径
 	*/

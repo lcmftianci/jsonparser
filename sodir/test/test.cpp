@@ -30,7 +30,7 @@ int main(int argc, char** argv)
 		cout << "failed" << endl;
 #if 1
 	pJson->SetJsonFilePath("/home/xu/json/sodir/test/");
-//	pJson->SetResourceCallback(GetData);
+	pJson->SetResourceCallback(GetData);
 	while(1)
 	{	
 		//data push

@@ -188,7 +188,7 @@ VideoInfoJsonManager::~VideoInfoJsonManager()
 	函数名称：VideoInfoJsonManager()
 	函数作用：构造函数
 */
-VideoInfoJsonManager::VideoInfoJsonManager(int model):m_nModel(model),m_nChannel(1),m_strJsonFilePath(""),m_callback(nullptr)
+VideoInfoJsonManager::VideoInfoJsonManager(int model):m_nModel(model),m_nChannel(1),m_strJsonFilePath(""),m_callback(nullptr),m_pUserData(nullptr)
 {
 	pthread_mutex_init(&g_mutex, NULL);
 #if 0

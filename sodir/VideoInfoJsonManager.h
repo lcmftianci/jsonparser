@@ -46,7 +46,8 @@ public:
 	/*
 		获取json字符串和IplImage数据
 	*/
-	void SetResourceCallback(RESOURCE_CALLBACK callback){ m_callback = callback; }
+	//void SetResourceCallback(RESOURCE_CALLBACK callback, void *pUserData){ m_callback = callback; m_pUserData = pUserData;}
+	void SetResourceCallback(RESOURCE_CALLBACK callback){ m_callback = callback;}
 	
 	/*
 		获取数据
@@ -121,6 +122,7 @@ private:
 	std::string m_strJsonFilePath;				//当前search path,根据时间获取的文件路径
 	std::string m_strJsonFilePathAfterRead;      		//open after path
 	RESOURCE_CALLBACK m_callback;				//获取数据的回调函数
+	void 	   *m_pUserData;				//用户数据
 	
 //	CBase64	    *m_pBase64;						//base64编解器
 };
